@@ -1,0 +1,26 @@
+# Binaries
+*.exe
+*.out
+watchdog
+
+# Go build artifacts
+/bin/
+
+# Generated Protobuf code (committed separately after generation)
+# gen/ — kept in repo
+
+# Logs
+*.log
+
+# Config with real credentials (only watchdog.toml.example is committed)
+# watchdog.toml — keep in repo as example; production config must not be committed
+
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+Thumbs.db
+
+# Go workspace
+go.work
+go.work.sum
