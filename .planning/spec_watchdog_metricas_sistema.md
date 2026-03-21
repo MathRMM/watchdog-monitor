@@ -201,25 +201,25 @@ Atende: RF01, RF02, RF03, RF04, RF05, RN02, RNF08, RNF03 (coleta < 1s total).
 
 **Testes (TDD):**
 
-- [ ] `cpu` → dado sistema com ao menos 1 core, quando `Collect()` é chamado, então retorna `CpuMetrics` com `TotalPercent` entre 0 e 100 e `PerCorePercent` com len > 0
-- [ ] `memory` → quando `Collect()` é chamado, então `TotalBytes > 0`, `AvailableBytes <= TotalBytes`, `UsedPercent` entre 0 e 100
-- [ ] `gpu` → dado WMI indisponível ou retorno vazio, quando `Collect()` é chamado, então retorna `(nil, err)` sem panic
-- [ ] `network` → dado dois `Collect()` consecutivos com tráfego entre eles, então `BytesSentDelta` e `BytesRecvDelta` refletem a diferença correta
-- [ ] `network` → dado primeira chamada a `Collect()`, então deltas são 0 (sem estado anterior)
-- [ ] `process` → quando `Collect()` é chamado, então retorna slice com no máximo 5 elementos, ordenados por CPU decrescente
-- [ ] `process` → dado sistema com menos de 5 processos visíveis, então retorna todos sem erro
-- [ ] Caso de borda `network`: interface que desaparece entre ciclos não causa panic
-- [ ] Caso de borda `process`: processo que encerra durante coleta é ignorado, os demais são retornados normalmente
+- [x] `cpu` → dado sistema com ao menos 1 core, quando `Collect()` é chamado, então retorna `CpuMetrics` com `TotalPercent` entre 0 e 100 e `PerCorePercent` com len > 0
+- [x] `memory` → quando `Collect()` é chamado, então `TotalBytes > 0`, `AvailableBytes <= TotalBytes`, `UsedPercent` entre 0 e 100
+- [x] `gpu` → dado WMI indisponível ou retorno vazio, quando `Collect()` é chamado, então retorna `(nil, err)` sem panic
+- [x] `network` → dado dois `Collect()` consecutivos com tráfego entre eles, então `BytesSentDelta` e `BytesRecvDelta` refletem a diferença correta
+- [x] `network` → dado primeira chamada a `Collect()`, então deltas são 0 (sem estado anterior)
+- [x] `process` → quando `Collect()` é chamado, então retorna slice com no máximo 5 elementos, ordenados por CPU decrescente
+- [x] `process` → dado sistema com menos de 5 processos visíveis, então retorna todos sem erro
+- [x] Caso de borda `network`: interface que desaparece entre ciclos não causa panic
+- [x] Caso de borda `process`: processo que encerra durante coleta é ignorado, os demais são retornados normalmente
 
 **Checklist de validação:**
 
-- [ ] Cada coletor compila isoladamente para `GOOS=windows`
-- [ ] `Collect()` nunca panics — todos os erros são retornados explicitamente (RNF08)
-- [ ] Coletor de rede mantém estado entre chamadas para calcular delta (RF04)
-- [ ] Coletor de GPU retorna `(nil, err)` quando WMI falha — não retorna zero-value (RF03, RN02)
-- [ ] Top-5 processos ordenados por CPU decrescente (RF05, RN05)
-- [ ] Todos os testes desta fase passando com `go test ./internal/collector/...`
-- [ ] Nenhum teste de fases anteriores quebrado
+- [x] Cada coletor compila isoladamente para `GOOS=windows`
+- [x] `Collect()` nunca panics — todos os erros são retornados explicitamente (RNF08)
+- [x] Coletor de rede mantém estado entre chamadas para calcular delta (RF04)
+- [x] Coletor de GPU retorna `(nil, err)` quando WMI falha — não retorna zero-value (RF03, RN02)
+- [x] Top-5 processos ordenados por CPU decrescente (RF05, RN05)
+- [x] Todos os testes desta fase passando com `go test ./internal/collector/...`
+- [x] Nenhum teste de fases anteriores quebrado
 
 **Critério de avanço:** Esta fase está concluída quando todos os itens acima estiverem marcados. Somente então iniciar a Fase 4.
 
