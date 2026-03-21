@@ -1,0 +1,32 @@
+# =============================================================================
+# watchdog.toml — Arquivo de configuração do Watchdog Monitor
+# =============================================================================
+# Copie este arquivo para o mesmo diretório do watchdog.exe e edite os valores.
+# Campos marcados como [OBRIGATÓRIO] precisam ser preenchidos para o serviço iniciar.
+# Campos marcados como [OPCIONAL] têm valores padrão e podem ser omitidos.
+# =============================================================================
+
+# [OBRIGATÓRIO] URL do servidor NATS onde as métricas serão publicadas.
+# Formato: nats://<host>:<porta>
+# Exemplo local: nats://localhost:4222
+# Exemplo remoto: nats://192.168.1.100:4222
+nats_url = "nats://localhost:4222"
+
+# [OPCIONAL] Caminho do arquivo de log rotacionado.
+# Pode ser caminho absoluto ou relativo ao diretório do executável.
+# Padrão: "watchdog.log" (no mesmo diretório do executável)
+# log_path = "C:\\Logs\\watchdog\\watchdog.log"
+log_path = ""
+
+# =============================================================================
+# Credenciais NATS — para uso futuro quando autenticação for habilitada (SEC04)
+# =============================================================================
+
+# [OPCIONAL] Usuário para autenticação no servidor NATS.
+# Deixe vazio ou omita se o servidor NATS não requer autenticação.
+nats_user = ""
+
+# [OPCIONAL] Senha para autenticação no servidor NATS.
+# ATENÇÃO: Restrinja as permissões deste arquivo (somente leitura para a conta de serviço).
+# Deixe vazio ou omita se o servidor NATS não requer autenticação.
+nats_password = ""

@@ -1,7 +1,6 @@
 # Binaries
-*.exe
+/bin/
 *.out
-watchdog
 
 # Go build artifacts
 /bin/
