@@ -112,21 +112,21 @@ Atende: RF08, RF09, RF14, RN01 (estrutura base), RNF06, RNF07, SEC04 (campo cred
 
 **Testes (TDD):**
 
-- [ ] `config` → dado arquivo `watchdog.toml` válido com `nats_url`, quando `Load()` é chamado, então retorna `*Config` com campo populado sem erro
-- [ ] `config` → dado arquivo inexistente, quando `Load()` é chamado, então retorna erro contendo o caminho do arquivo
-- [ ] `config` → dado arquivo com TOML malformado, quando `Load()` é chamado, então retorna erro descritivo (não panic)
-- [ ] `config` → dado arquivo sem campo `nats_url`, quando `Load()` é chamado, então retorna erro de campo obrigatório ausente
-- [ ] Caso de borda: arquivo `watchdog.toml` com campos extras desconhecidos deve ser aceito sem erro (forward compatibility)
+- [x] `config` → dado arquivo `watchdog.toml` válido com `nats_url`, quando `Load()` é chamado, então retorna `*Config` com campo populado sem erro
+- [x] `config` → dado arquivo inexistente, quando `Load()` é chamado, então retorna erro contendo o caminho do arquivo
+- [x] `config` → dado arquivo com TOML malformado, quando `Load()` é chamado, então retorna erro descritivo (não panic)
+- [x] `config` → dado arquivo sem campo `nats_url`, quando `Load()` é chamado, então retorna erro de campo obrigatório ausente
+- [x] Caso de borda: arquivo `watchdog.toml` com campos extras desconhecidos deve ser aceito sem erro (forward compatibility)
 
 **Checklist de validação:**
 
-- [ ] `go build ./...` compila sem erros para `GOOS=windows GOARCH=amd64`
-- [ ] `Load()` retorna erro claro quando arquivo ausente (RF09, Alternativo D)
-- [ ] `Load()` retorna erro claro quando TOML inválido (RF09, Alternativo D)
-- [ ] Logger grava em arquivo e rotaciona conforme configurado (RF13)
-- [ ] `watchdog.toml` de exemplo contém comentários em todos os campos (RNF07)
-- [ ] Todos os testes desta fase passando com `go test ./internal/config/...`
-- [ ] Nenhum teste de fases anteriores quebrado
+- [x] `go build ./...` compila sem erros para `GOOS=windows GOARCH=amd64`
+- [x] `Load()` retorna erro claro quando arquivo ausente (RF09, Alternativo D)
+- [x] `Load()` retorna erro claro quando TOML inválido (RF09, Alternativo D)
+- [x] Logger grava em arquivo e rotaciona conforme configurado (RF13)
+- [x] `watchdog.toml` de exemplo contém comentários em todos os campos (RNF07)
+- [x] Todos os testes desta fase passando com `go test ./internal/config/...`
+- [x] Nenhum teste de fases anteriores quebrado
 
 **Critério de avanço:** Esta fase está concluída quando todos os itens acima estiverem marcados. Somente então iniciar a Fase 2.
 
@@ -153,20 +153,20 @@ Atende: RF06 (estrutura do payload), RF11, RF12, RNF09.
 
 **Testes (TDD):**
 
-- [ ] `payload` → dado um `SystemMetrics` com todos os campos preenchidos (incluindo GPU), quando serializado com `proto.Marshal()` e desserializado, então todos os valores são preservados
-- [ ] `payload` → dado um `SystemMetrics` sem o campo `gpu` (nil), quando serializado, então a desserialização resulta em campo GPU nil (não zero-value)
-- [ ] `payload` → dado um `GpuMetrics` sem `temperature_celsius`, quando serializado, então temperatura é distinguível de `0.0` após desserialização
-- [ ] `payload` → dado `timestamp_ms` com valor Unix milliseconds UTC, quando serializado e desserializado, então valor é exato
-- [ ] Caso de borda: payload com lista `top_processes` vazia serializa e desserializa sem erro
+- [x] `payload` → dado um `SystemMetrics` com todos os campos preenchidos (incluindo GPU), quando serializado com `proto.Marshal()` e desserializado, então todos os valores são preservados
+- [x] `payload` → dado um `SystemMetrics` sem o campo `gpu` (nil), quando serializado, então a desserialização resulta em campo GPU nil (não zero-value)
+- [x] `payload` → dado um `GpuMetrics` sem `temperature_celsius`, quando serializado, então temperatura é distinguível de `0.0` após desserialização
+- [x] `payload` → dado `timestamp_ms` com valor Unix milliseconds UTC, quando serializado e desserializado, então valor é exato
+- [x] Caso de borda: payload com lista `top_processes` vazia serializa e desserializa sem erro
 
 **Checklist de validação:**
 
-- [ ] `make proto` gera `gen/metrics/metrics.pb.go` sem erros
-- [ ] `go build ./...` compila incluindo o pacote gerado
-- [ ] Campo `gpu` é `optional` (nil quando ausente, não zero-value) — RNF09
-- [ ] Campo `temperature_celsius` dentro de `GpuMetrics` é `optional`
-- [ ] Todos os testes desta fase passando com `go test ./...`
-- [ ] Nenhum teste de fases anteriores quebrado
+- [x] `make proto` gera `gen/metrics/metrics.pb.go` sem erros
+- [x] `go build ./...` compila incluindo o pacote gerado
+- [x] Campo `gpu` é `optional` (nil quando ausente, não zero-value) — RNF09
+- [x] Campo `temperature_celsius` dentro de `GpuMetrics` é `optional`
+- [x] Todos os testes desta fase passando com `go test ./...`
+- [x] Nenhum teste de fases anteriores quebrado
 
 **Critério de avanço:** Esta fase está concluída quando todos os itens acima estiverem marcados. Somente então iniciar a Fase 3.
 
