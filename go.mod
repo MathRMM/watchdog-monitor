@@ -7,3 +7,5 @@ require (
 	golang.org/x/sys v0.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
+
+require google.golang.org/protobuf v1.36.11 // indirect

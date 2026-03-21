@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package watchdog.metrics;
+
+option go_package = "github.com/mathrmm/watchdog-monitor/gen/metrics";
+
+// SystemMetrics é o payload publicado a cada ciclo de coleta.
+message SystemMetrics {
+  string hostname     = 1;
+  int64  timestamp_ms = 2;  // Unix milliseconds UTC
+
+  CpuMetrics    cpu    = 3;
+  MemoryMetrics memory = 4;
+
+  // gpu é opcional — nil quando GPU indisponível ou WMI falha (RNF09).
+  optional GpuMetrics gpu = 5;
+
+  repeated NetworkInterface network       = 6;
+  repeated ProcessInfo      top_processes = 7;
+}
+
+// CpuMetrics contém uso de CPU geral e por core (RF01).
+message CpuMetrics {
+  double          total_percent    = 1;  // 0.0–100.0
+  repeated double per_core_percent = 2;
+}
+
+// MemoryMetrics contém uso de RAM (RF02).
+message MemoryMetrics {
+  uint64 total_bytes     = 1;
+  uint64 available_bytes = 2;
+  double used_percent    = 3;  // 0.0–100.0
+}
+
+// GpuMetrics contém uso de GPU via WMI (RF03).
+message GpuMetrics {
+  double used_percent          = 1;
+  uint64 dedicated_used_bytes  = 2;
+  uint64 dedicated_total_bytes = 3;
+
+  // temperature_celsius é opcional — nil quando não suportado pelo hardware (RNF09).
+  optional double temperature_celsius = 4;
+}
+
+// NetworkInterface contém delta de bytes por interface de rede (RF04).
+message NetworkInterface {
+  string name             = 1;
+  uint64 bytes_sent_delta = 2;  // delta desde o último ciclo
+  uint64 bytes_recv_delta = 3;
+}
+
+// ProcessInfo representa um processo no top-5 por CPU (RF05).
+message ProcessInfo {
+  string name         = 1;
+  uint32 pid          = 2;
+  double cpu_percent  = 3;
+  uint64 memory_bytes = 4;
+}

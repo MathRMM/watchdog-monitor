@@ -35,10 +35,17 @@ build:
 		./cmd/watchdog/
 
 # -----------------------------------------------------------------------------
-# Proto (adicionado na Fase 2)
+# Proto
 # -----------------------------------------------------------------------------
+
+# Gera código Go a partir do schema Protobuf.
+# Requer: protoc (https://github.com/protocolbuffers/protobuf/releases)
+#         protoc-gen-go (go install google.golang.org/protobuf/cmd/protoc-gen-go@latest)
 proto:
-	@echo "[TODO] Target 'proto' será implementado na Fase 2"
+	protoc \
+		--go_out=. \
+		--go_opt=module=github.com/mathrmm/watchdog-monitor \
+		proto/metrics.proto
 
 # -----------------------------------------------------------------------------
 # Testes
