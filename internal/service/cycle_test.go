@@ -126,3 +126,63 @@ func TestRunCycle_TimestampUTC(t *testing.T) {
 		t.Errorf("timestamp %d out of range [%d, %d]", payload.TimestampMs, beforeMs, afterMs)
 	}
 }
+
+// TestRun_StopsOnClosedChannel verifies that Run() returns promptly when stopCh
+// is closed — no goroutine leak, no deadlock (Fase 5 shutdown gracioso).
+func TestRun_StopsOnClosedChannel(t *testing.T) {
+	pub := &mockPublisher{}
+	runner := service.NewCycleRunner("testhost", pub)
+
+	stopCh := make(chan struct{})
+	done := make(chan struct{})
+
+	go func() {
+		runner.Run(stopCh)
+		close(done)
+	}()
+
+	close(stopCh)
+
+	select {
+	case <-done:
+		// OK — goroutine exited
+	case <-time.After(3 * time.Second):
+		t.Fatal("Run() did not return after stopCh was closed (possible deadlock or goroutine leak)")
+	}
+}
+
+// TestRun_ShutdownDuringCycle verifies that closing stopCh while RunCycle is
+// executing does not cause a deadlock — Run() eventually returns (Fase 5 borda).
+func TestRun_ShutdownDuringCycle(t *testing.T) {
+	// Use a publisher that blocks briefly to simulate RunCycle in progress.
+	slowPub := &slowPublisher{delay: 50 * time.Millisecond}
+	runner := service.NewCycleRunner("testhost", slowPub)
+
+	stopCh := make(chan struct{})
+	done := make(chan struct{})
+
+	go func() {
+		runner.Run(stopCh)
+		close(done)
+	}()
+
+	// Close stop immediately; Run may be between ticks or about to tick.
+	close(stopCh)
+
+	select {
+	case <-done:
+		// OK
+	case <-time.After(5 * time.Second):
+		t.Fatal("Run() did not return after stop signal during active cycle")
+	}
+}
+
+// slowPublisher simulates a publisher with artificial delay.
+type slowPublisher struct {
+	delay time.Duration
+}
+
+func (s *slowPublisher) Publish(_ string, _ []byte) error {
+	time.Sleep(s.delay)
+	return nil
+}

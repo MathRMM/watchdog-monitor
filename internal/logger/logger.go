@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	mu  sync.Mutex
-	std *log.Logger
+	mu         sync.Mutex
+	std        *log.Logger
+	lastErrMsg string // last error message logged; empty means "no suppression active"
 )
 
 // Setup initializes the logger with file rotation via lumberjack.
@@ -30,11 +31,21 @@ func Setup(logPath string) {
 		Compress:   false,
 	}
 
-	multi := io.MultiWriter(os.Stdout, rotator)
+	SetupWriter(io.MultiWriter(os.Stdout, rotator))
+}
 
+// SetupWriter configures the logger to write to w.
+// Passing nil resets the logger to the default log.Default() behaviour.
+// Intended for use in tests — production code calls Setup().
+func SetupWriter(w io.Writer) {
 	mu.Lock()
 	defer mu.Unlock()
-	std = log.New(multi, "", log.LstdFlags)
+	lastErrMsg = "" // reset dedup state on every setup
+	if w == nil {
+		std = nil
+		return
+	}
+	std = log.New(w, "", log.LstdFlags)
 }
 
 // Info logs an informational message.
@@ -51,13 +62,20 @@ func Info(format string, args ...any) {
 	l.Print(msg)
 }
 
-// Error logs an error message.
+// Error logs an error message with deduplication: if the same message is logged
+// consecutively it is suppressed after the first occurrence. A different message
+// clears the suppression and is logged normally.
 func Error(format string, args ...any) {
 	mu.Lock()
 	l := std
+	msg := fmt.Sprintf("[ERROR] "+format, args...)
+	if msg == lastErrMsg {
+		mu.Unlock()
+		return // suppress duplicate
+	}
+	lastErrMsg = msg
 	mu.Unlock()
 
-	msg := fmt.Sprintf("[ERROR] "+format, args...)
 	if l == nil {
 		log.Print(msg)
 		return

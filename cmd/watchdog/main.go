@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 
 	"golang.org/x/sys/windows/svc"
@@ -44,24 +45,42 @@ func main() {
 	}
 	hostname = service.SanitizeHostname(hostname)
 
+	// RF14: log version, hostname and NATS URL on startup.
 	logger.Info("version=%s hostname=%s nats_url=%s", Version, hostname, cfg.NatsURL)
 
 	pub, err := publisher.Connect(cfg.NatsURL)
 	if err != nil {
 		log.Fatalf("failed to connect to NATS: %v", err)
 	}
-	defer pub.Close()
 
 	cycleRunner := service.NewCycleRunner(hostname, pub)
+
+	// runCycle starts the cycle goroutine and returns channels to stop it and
+	// wait for it to finish — enabling gracious shutdown before pub.Close().
+	runCycle := func(stopCh <-chan struct{}) (done <-chan struct{}) {
+		ch := make(chan struct{})
+		go func() {
+			defer close(ch)
+			cycleRunner.Run(stopCh)
+		}()
+		return ch
+	}
 
 	isService, err := svc.IsWindowsService()
 	if err != nil {
 		log.Fatalf("failed to determine session type: %v", err)
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	if isService {
 		handler := service.NewHandler()
-		go cycleRunner.Run(handler.StopCh())
+		done := runCycle(handler.StopCh())
+		go func() {
+			defer wg.Done()
+			<-done
+		}()
 		if err := svc.Run(service.ServiceName, handler); err != nil {
 			log.Fatalf("service failed: %v", err)
 		}
@@ -69,12 +88,21 @@ func main() {
 		// Interactive mode — run until Ctrl+C or SIGTERM.
 		logger.Info("running in interactive mode (not as Windows Service)")
 		stopCh := make(chan struct{})
-		go cycleRunner.Run(stopCh)
+		done := runCycle(stopCh)
+		go func() {
+			defer wg.Done()
+			<-done
+		}()
 
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 		<-sig
 		close(stopCh)
-		logger.Info("shutting down")
 	}
+
+	// Wait for the cycle goroutine to finish before closing the publisher.
+	// This ensures no in-flight Publish() call races with pub.Close() (RNF04).
+	wg.Wait()
+	logger.Info("shutting down")
+	pub.Close()
 }

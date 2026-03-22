@@ -22,10 +22,11 @@ type Publisher interface {
 
 // CycleRunner collects metrics each tick, builds the Protobuf payload, and publishes it.
 type CycleRunner struct {
-	hostname     string
-	subject      string
-	pub          Publisher
-	netCollector *collector.NetworkCollector
+	hostname      string
+	subject       string
+	pub           Publisher
+	netCollector  *collector.NetworkCollector
+	gpuErrActive  bool // true while GPU collector is failing (log-once suppression)
 }
 
 // NewCycleRunner creates a CycleRunner ready to run.
@@ -58,10 +59,18 @@ func (r *CycleRunner) RunCycle() {
 	}
 
 	// GPU failure → nil field in payload, not a skipped publish (RN02, RNF09).
+	// Log-once suppression: first failure is logged; subsequent identical failures
+	// are silenced until the collector recovers (Alternativo C do PRD, Fase 5).
 	gpuMetrics, err := collector.CollectGPU()
 	if err != nil {
-		logger.Error("gpu collect: %v", err)
+		if !r.gpuErrActive {
+			logger.Error("gpu collect: %v", err)
+			r.gpuErrActive = true
+		}
 		gpuMetrics = nil
+	} else if r.gpuErrActive {
+		logger.Info("gpu collector recovered")
+		r.gpuErrActive = false
 	}
 
 	netInterfaces, err := r.netCollector.Collect()
