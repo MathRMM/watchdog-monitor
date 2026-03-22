@@ -249,26 +249,26 @@ Atende: RF06, RF07, RF10, RF11, RF12, RN03, RN04, RN06.
 
 **Testes (TDD):**
 
-- [ ] `publisher` → dado NATS indisponível, quando `Publish()` é chamado, então retorna erro sem panic
-- [ ] `publisher` → dado NATS disponível, quando `Publish()` é chamado com payload válido, então retorna nil e mensagem é entregue
-- [ ] `hostname sanitization` → dado hostname `"MY-PC.local"`, então sanitizado é `"MY-PC-local"`
-- [ ] `hostname sanitization` → dado hostname com espaços `"My PC"`, então sanitizado é `"My-PC"`
-- [ ] `hostname sanitization` → dado hostname `"pc--lab"`, então hífens duplicados são colapsados para `"pc-lab"`
-- [ ] `cycle` → dado todos os coletores retornando sucesso, quando `RunCycle()` é chamado, então `SystemMetrics` serializado contém todos os campos não-nulos
-- [ ] `cycle` → dado coletor GPU retornando erro, quando `RunCycle()` é chamado, então payload é publicado com campo `gpu` nil
-- [ ] `cycle` → dado `Publish()` retornando erro, quando `RunCycle()` retorna, então nenhum panic ocorre e ciclo prossegue
-- [ ] Caso de borda: `timestamp_ms` no payload corresponde ao tempo UTC do momento da coleta (não do publish)
+- [x] `publisher` → dado NATS indisponível, quando `Publish()` é chamado, então retorna erro sem panic
+- [x] `publisher` → dado NATS disponível, quando `Publish()` é chamado com payload válido, então retorna nil e mensagem é entregue
+- [x] `hostname sanitization` → dado hostname `"MY-PC.local"`, então sanitizado é `"MY-PC-local"`
+- [x] `hostname sanitization` → dado hostname com espaços `"My PC"`, então sanitizado é `"My-PC"`
+- [x] `hostname sanitization` → dado hostname `"pc--lab"`, então hífens duplicados são colapsados para `"pc-lab"`
+- [x] `cycle` → dado todos os coletores retornando sucesso, quando `RunCycle()` é chamado, então `SystemMetrics` serializado contém todos os campos não-nulos
+- [x] `cycle` → dado coletor GPU retornando erro, quando `RunCycle()` é chamado, então payload é publicado com campo `gpu` nil
+- [x] `cycle` → dado `Publish()` retornando erro, quando `RunCycle()` retorna, então nenhum panic ocorre e ciclo prossegue
+- [x] Caso de borda: `timestamp_ms` no payload corresponde ao tempo UTC do momento da coleta (não do publish)
 
 **Checklist de validação:**
 
-- [ ] Ticker usa `time.NewTicker` — não `time.Sleep` (RN06, RF07)
-- [ ] Subject NATS segue padrão `watchdog.{hostname}.metrics` com hostname sanitizado (RN04)
-- [ ] Falha de `Publish()` não interrompe o serviço (RF10, RN03)
-- [ ] Campo `gpu` é nil no payload quando coletor GPU falha (RN02, RNF09)
-- [ ] `timestamp_ms` é Unix milliseconds UTC (RF12)
-- [ ] `hostname` está presente em todos os payloads (RF11)
-- [ ] Todos os testes desta fase passando com `go test ./internal/publisher/... ./internal/service/...`
-- [ ] Nenhum teste de fases anteriores quebrado
+- [x] Ticker usa `time.NewTicker` — não `time.Sleep` (RN06, RF07)
+- [x] Subject NATS segue padrão `watchdog.{hostname}.metrics` com hostname sanitizado (RN04)
+- [x] Falha de `Publish()` não interrompe o serviço (RF10, RN03)
+- [x] Campo `gpu` é nil no payload quando coletor GPU falha (RN02, RNF09)
+- [x] `timestamp_ms` é Unix milliseconds UTC (RF12)
+- [x] `hostname` está presente em todos os payloads (RF11)
+- [x] Todos os testes desta fase passando com `go test ./internal/publisher/... ./internal/service/...`
+- [x] Nenhum teste de fases anteriores quebrado
 
 **Critério de avanço:** Esta fase está concluída quando todos os itens acima estiverem marcados. Somente então iniciar a Fase 5.
 
