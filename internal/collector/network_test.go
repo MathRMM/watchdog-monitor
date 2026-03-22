@@ -23,6 +23,34 @@ func TestNetworkCollector_FirstCallDeltasZero(t *testing.T) {
 	}
 }
 
+// TestNetworkCollector_AtLeastOneInterface verifica que o sistema possui pelo menos
+// uma interface de rede detectável.
+func TestNetworkCollector_AtLeastOneInterface(t *testing.T) {
+	nc := collector.NewNetworkCollector()
+	interfaces, err := nc.Collect()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(interfaces) == 0 {
+		t.Error("expected at least one network interface")
+	}
+}
+
+// TestNetworkCollector_InterfacesHaveNames verifica que cada interface retornada
+// possui um Name não vazio.
+func TestNetworkCollector_InterfacesHaveNames(t *testing.T) {
+	nc := collector.NewNetworkCollector()
+	interfaces, err := nc.Collect()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for i, iface := range interfaces {
+		if iface.Name == "" {
+			t.Errorf("interface[%d]: Name is empty", i)
+		}
+	}
+}
+
 // TestNetworkCollector_SecondCallDeltasNonNegative verifies that deltas computed
 // between two consecutive Collect() calls are non-negative.
 func TestNetworkCollector_SecondCallDeltasNonNegative(t *testing.T) {

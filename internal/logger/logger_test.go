@@ -1,6 +1,8 @@
 package logger_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -50,6 +52,39 @@ func TestErrorDedup_DifferentMessageLogged(t *testing.T) {
 	count := strings.Count(got, "gpu collect: access denied")
 	if count != 1 {
 		t.Errorf("expected 1 entry for new error, got %d", count)
+	}
+}
+
+// TestInfo_LogsMessage verifica que Info() escreve o prefixo [INFO] e a mensagem formatada.
+func TestInfo_LogsMessage(t *testing.T) {
+	getLog := captureLog(t)
+
+	logger.Info("version=%s started", "1.0.0")
+
+	got := getLog()
+	if !strings.Contains(got, "[INFO]") {
+		t.Errorf("expected [INFO] prefix in log output, got: %s", got)
+	}
+	if !strings.Contains(got, "version=1.0.0 started") {
+		t.Errorf("expected formatted message in log output, got: %s", got)
+	}
+}
+
+// TestSetup_WritesToFile verifica que Setup() cria o arquivo de log e escreve nele.
+func TestSetup_WritesToFile(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "watchdog-test.log")
+
+	logger.Setup(logPath)
+	t.Cleanup(func() { logger.SetupWriter(nil) })
+
+	logger.Info("hello from file test")
+
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("log file not created at %s: %v", logPath, err)
+	}
+	if !strings.Contains(string(data), "hello from file test") {
+		t.Errorf("expected message in log file, got: %q", string(data))
 	}
 }
 

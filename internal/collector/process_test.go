@@ -41,3 +41,20 @@ func TestCollectProcesses_AtLeastOne(t *testing.T) {
 		t.Error("expected at least 1 process")
 	}
 }
+
+// TestCollectProcesses_FieldsValid verifica que cada processo retornado tem
+// Name não vazio e Pid válido (> 0).
+func TestCollectProcesses_FieldsValid(t *testing.T) {
+	processes, err := collector.CollectProcesses()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for i, p := range processes {
+		if p.Name == "" {
+			t.Errorf("process[%d]: Name is empty", i)
+		}
+		if p.Pid == 0 {
+			t.Errorf("process[%d] (%s): Pid is 0", i, p.Name)
+		}
+	}
+}

@@ -20,23 +20,57 @@ type Publisher interface {
 	Publish(subject string, data []byte) error
 }
 
-// CycleRunner collects metrics each tick, builds the Protobuf payload, and publishes it.
-type CycleRunner struct {
-	hostname      string
-	subject       string
-	pub           Publisher
-	netCollector  *collector.NetworkCollector
-	gpuErrActive  bool // true while GPU collector is failing (log-once suppression)
+// Collectors holds the functions that RunCycle uses to collect metrics.
+// Production code uses NewCycleRunner; tests can inject stubs via NewCycleRunnerWith.
+type Collectors struct {
+	CPU     func() (*metrics.CpuMetrics, error)
+	Memory  func() (*metrics.MemoryMetrics, error)
+	GPU     func() (*metrics.GpuMetrics, error)
+	Network func() ([]*metrics.NetworkInterface, error)
+	Process func() ([]*metrics.ProcessInfo, error)
 }
 
-// NewCycleRunner creates a CycleRunner ready to run.
-// hostname must already be sanitized via SanitizeHostname.
+func defaultCollectors() Collectors {
+	net := collector.NewNetworkCollector()
+	return Collectors{
+		CPU:     collector.CollectCPU,
+		Memory:  collector.CollectMemory,
+		GPU:     collector.CollectGPU,
+		Network: net.Collect,
+		Process: collector.CollectProcesses,
+	}
+}
+
+// CycleRunner collects metrics each tick, builds the Protobuf payload, and publishes it.
+type CycleRunner struct {
+	hostname     string
+	subject      string
+	pub          Publisher
+	collectors   Collectors
+	gpuErrActive bool // true while GPU collector is failing (log-once suppression)
+	tickInterval time.Duration
+}
+
+// NewCycleRunner creates a CycleRunner using real system collectors and a 5-second tick.
 func NewCycleRunner(hostname string, pub Publisher) *CycleRunner {
 	return &CycleRunner{
 		hostname:     hostname,
 		subject:      fmt.Sprintf("watchdog.%s.metrics", hostname),
 		pub:          pub,
-		netCollector: collector.NewNetworkCollector(),
+		collectors:   defaultCollectors(),
+		tickInterval: 5 * time.Second,
+	}
+}
+
+// NewCycleRunnerWith creates a CycleRunner with custom collectors and tick interval.
+// Intended for testing — production code uses NewCycleRunner.
+func NewCycleRunnerWith(hostname string, pub Publisher, c Collectors, tick time.Duration) *CycleRunner {
+	return &CycleRunner{
+		hostname:     hostname,
+		subject:      fmt.Sprintf("watchdog.%s.metrics", hostname),
+		pub:          pub,
+		collectors:   c,
+		tickInterval: tick,
 	}
 }
 
@@ -48,12 +82,12 @@ func NewCycleRunner(hostname string, pub Publisher) *CycleRunner {
 func (r *CycleRunner) RunCycle() {
 	ts := time.Now().UnixMilli() // capture timestamp before collection (RF12)
 
-	cpuMetrics, err := collector.CollectCPU()
+	cpuMetrics, err := r.collectors.CPU()
 	if err != nil {
 		logger.Error("cpu collect: %v", err)
 	}
 
-	memMetrics, err := collector.CollectMemory()
+	memMetrics, err := r.collectors.Memory()
 	if err != nil {
 		logger.Error("memory collect: %v", err)
 	}
@@ -61,7 +95,7 @@ func (r *CycleRunner) RunCycle() {
 	// GPU failure → nil field in payload, not a skipped publish (RN02, RNF09).
 	// Log-once suppression: first failure is logged; subsequent identical failures
 	// are silenced until the collector recovers (Alternativo C do PRD, Fase 5).
-	gpuMetrics, err := collector.CollectGPU()
+	gpuMetrics, err := r.collectors.GPU()
 	if err != nil {
 		if !r.gpuErrActive {
 			logger.Error("gpu collect: %v", err)
@@ -73,12 +107,12 @@ func (r *CycleRunner) RunCycle() {
 		r.gpuErrActive = false
 	}
 
-	netInterfaces, err := r.netCollector.Collect()
+	netInterfaces, err := r.collectors.Network()
 	if err != nil {
 		logger.Error("network collect: %v", err)
 	}
 
-	procList, err := collector.CollectProcesses()
+	procList, err := r.collectors.Process()
 	if err != nil {
 		logger.Error("process collect: %v", err)
 	}
@@ -108,7 +142,7 @@ func (r *CycleRunner) RunCycle() {
 // Uses time.NewTicker — not time.Sleep — so ticks are absolute and drift-free.
 // Blocks until stopCh is closed.
 func (r *CycleRunner) Run(stopCh <-chan struct{}) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(r.tickInterval)
 	defer ticker.Stop()
 
 	for {

@@ -10,21 +10,21 @@ import (
 )
 
 type win32VideoController struct {
-	Name         string
-	AdapterRAM   uint32
-	CurrentUsage uint32
+	Name       string
+	AdapterRAM uint32
 }
 
 // CollectGPU queries Win32_VideoController via WMI for GPU metrics (RF03).
-// Returns (nil, err) if WMI is unavailable or the GPU doesn't expose usage data.
+// Returns (nil, err) if WMI is unavailable or no GPU is found.
 // This is expected behavior — the cycle will omit the gpu field in the payload (RN02).
 //
-// Known limitation: AMD RX 6600 may not expose CurrentUsage via Win32_VideoController.
+// Known limitation: Win32_VideoController does not expose a usage percentage property.
+// UsedPercent is always 0 — GPU utilization requires PDH or GPU-vendor-specific APIs.
 // AdapterRAM is capped at uint32 (~4 GB) due to the WMI property type.
 // Temperature via MSAcpi_ThermalZoneTemperature is attempted but silently omitted on failure.
 func CollectGPU() (*metrics.GpuMetrics, error) {
 	var controllers []win32VideoController
-	if err := wmi.Query("SELECT Name, AdapterRAM, CurrentUsage FROM Win32_VideoController", &controllers); err != nil {
+	if err := wmi.Query("SELECT Name, AdapterRAM FROM Win32_VideoController", &controllers); err != nil {
 		return nil, fmt.Errorf("WMI query Win32_VideoController: %w", err)
 	}
 	if len(controllers) == 0 {
@@ -33,7 +33,7 @@ func CollectGPU() (*metrics.GpuMetrics, error) {
 
 	c := controllers[0]
 	m := &metrics.GpuMetrics{
-		UsedPercent:         float64(c.CurrentUsage),
+		UsedPercent:         0, // Win32_VideoController does not expose usage; requires PDH/vendor API
 		DedicatedTotalBytes: uint64(c.AdapterRAM),
 	}
 

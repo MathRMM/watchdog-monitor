@@ -6,19 +6,21 @@ import (
 	"github.com/mathrmm/watchdog-monitor/internal/collector"
 )
 
-// TestCollectGPU_NoPanic verifies that CollectGPU never panics.
-// On non-Windows or systems without WMI support, it must return (nil, err).
+// TestCollectGPU_NoPanic verifica que CollectGPU nunca panics.
+// Em plataformas não-Windows retorna (nil, err) — isso é comportamento esperado (RN02).
+// Em Windows, a validação real da query está em gpu_windows_test.go.
 func TestCollectGPU_NoPanic(t *testing.T) {
 	result, err := collector.CollectGPU()
 	if err != nil {
 		if result != nil {
-			t.Error("expected nil result when err is non-nil (RN02)")
+			t.Error("esperado result == nil quando err != nil (RN02)")
 		}
-		// Error is acceptable — WMI unavailable or non-Windows platform.
 		return
 	}
-	// GPU available: validate field ranges.
+	if result == nil {
+		t.Fatal("CollectGPU retornou (nil, nil) — estado inválido")
+	}
 	if result.UsedPercent < 0 || result.UsedPercent > 100 {
-		t.Errorf("UsedPercent out of range: %f", result.UsedPercent)
+		t.Errorf("UsedPercent fora do intervalo [0,100]: %f", result.UsedPercent)
 	}
 }
