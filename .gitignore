@@ -23,3 +23,9 @@ Thumbs.db
 # Go workspace
 go.work
 go.work.sum
+
+.claude
+.planning
+*.exe
+watchdog.log
+/rules

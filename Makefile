@@ -78,6 +78,9 @@ run: build
 	@echo ""
 	./bin/watchdog.exe
 
+stop:
+	taskkill.exe /f /im watchdog.ex
+
 # Monitora o arquivo de log em tempo real.
 # Execute em um terminal separado enquanto 'make run' está ativo.
 logs:
