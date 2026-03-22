@@ -69,7 +69,7 @@ test:
 # Exemplo de uso com versão específica:
 #   make run VERSION=1.0.0
 run: build
-	@cp watchdog.toml bin/watchdog.toml
+	@[ -f bin/watchdog.toml ] || cp watchdog.toml bin/watchdog.toml
 	@echo ""
 	@echo "  Iniciando Watchdog Monitor v$(VERSION)"
 	@echo "  Config: bin/watchdog.toml"
