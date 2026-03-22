@@ -51,22 +51,21 @@ func TestNetworkCollector_InterfacesHaveNames(t *testing.T) {
 	}
 }
 
-// TestNetworkCollector_SecondCallDeltasNonNegative verifies that deltas computed
-// between two consecutive Collect() calls are non-negative.
-func TestNetworkCollector_SecondCallDeltasNonNegative(t *testing.T) {
+// TestNetworkCollector_SecondCallSucceeds verifies that a second Collect() call
+// succeeds and returns at least as many interfaces as the first.
+// Non-negativity of deltas is guaranteed by the uint64 type (BytesSentDelta, BytesRecvDelta).
+func TestNetworkCollector_SecondCallSucceeds(t *testing.T) {
 	nc := collector.NewNetworkCollector()
-	if _, err := nc.Collect(); err != nil {
+	first, err := nc.Collect()
+	if err != nil {
 		t.Fatalf("first Collect() error: %v", err)
 	}
 	time.Sleep(100 * time.Millisecond)
-	interfaces, err := nc.Collect()
+	second, err := nc.Collect()
 	if err != nil {
 		t.Fatalf("second Collect() error: %v", err)
 	}
-	for _, iface := range interfaces {
-		if iface.BytesSentDelta < 0 || iface.BytesRecvDelta < 0 {
-			t.Errorf("negative delta for %s: sent=%d recv=%d",
-				iface.Name, iface.BytesSentDelta, iface.BytesRecvDelta)
-		}
+	if len(second) < len(first) {
+		t.Errorf("second call returned fewer interfaces (%d) than first (%d)", len(second), len(first))
 	}
 }
