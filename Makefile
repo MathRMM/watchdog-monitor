@@ -2,7 +2,7 @@
 # Watchdog Monitor
 # =============================================================================
 
-.PHONY: help build proto test run logs install-service
+.PHONY: help build proto test run logs deploy stop install-service
 
 VERSION ?= dev
 
@@ -23,6 +23,8 @@ help:
 	@echo "    make logs               Monitora o arquivo de log em tempo real"
 	@echo ""
 	@echo "  Deploy"
+	@echo "    make deploy             Compila e inicia em segundo plano (sobrevive ao fechar o terminal)"
+	@echo "    make stop               Encerra o processo watchdog.exe"
 	@echo "    make install-service    Exibe instrução para registrar o serviço no SCM"
 	@echo ""
 
@@ -78,8 +80,23 @@ run: build
 	@echo ""
 	./bin/watchdog.exe
 
+# Inicia o watchdog em segundo plano, desanexado do terminal.
+# O processo continua rodando mesmo após fechar o terminal.
+# Requer: watchdog.toml configurado em bin/
+deploy: build
+	@[ -f bin/watchdog.toml ] || cp watchdog.toml bin/watchdog.toml
+	@echo ""
+	@echo "  Iniciando Watchdog Monitor v$(VERSION) em segundo plano..."
+	@powershell.exe -NoProfile -Command "Start-Process -FilePath (Resolve-Path 'bin/watchdog.exe')"
+	@echo "  Watchdog Monitor iniciado."
+	@echo "  Use 'make stop' para encerrar."
+	@echo ""
+
+# Encerra o processo watchdog.exe em execução.
 stop:
-	taskkill.exe /f /im watchdog.ex
+	@echo "  Encerrando Watchdog Monitor..."
+	@taskkill.exe /f /im watchdog.exe 2>/dev/null; true
+	@echo "  Watchdog Monitor encerrado."
 
 # Monitora o arquivo de log em tempo real.
 # Execute em um terminal separado enquanto 'make run' está ativo.
